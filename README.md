@@ -1,6 +1,12 @@
-# tech-ip-sem2-cicd
+# Практическая работа № 24
 
-Практическая работа по настройке CI/CD для Go backend-проекта с автоматическими тестами, сборкой и Docker build.
+Студент: Юркин В.И.
+
+Группа: ПИМО-01-25
+
+Тема: Настройка GitHub Actions для деплоя приложения
+
+Цель: Освоить основы CI/CD для backend-проекта на Go, научиться настраивать автоматический pipeline для проверки, сборки, упаковки Docker-образа и подготовки приложения к доставке
 
 ## Что реализовано
 
@@ -9,8 +15,7 @@
 - `Dockerfile` с multi-stage build
 - `.dockerignore` для чистого build context
 - `docker-compose.yml` для локального запуска контейнера
-- pipeline для GitHub Actions в `.github/workflows/ci.yml`
-- альтернативный pipeline для GitLab CI в `.gitlab-ci.yml`
+- простой pipeline для GitHub Actions в `.github/workflows/ci.yml`
 
 ## Структура
 
@@ -33,36 +38,7 @@ tech-ip-sem2-cicd/                    - корень проекта практи
 │       └── go.mod                    - Go-модуль сервиса
 ├── deploy/
 │   └── docker-compose.yml            - локальный запуск контейнера через Compose
-├── .gitlab-ci.yml                    - альтернативный pipeline GitLab CI
 └── README.md                         - описание практики и шагов pipeline
-```
-
-## CI и CD
-
-- `CI` — Continuous Integration: автоматические тесты и сборка после изменения кода
-- `CD` — Continuous Delivery / Deployment: подготовка артефакта к доставке, публикация образа и, при необходимости, деплой
-
-В этом проекте обязательная часть pipeline:
-- checkout репозитория
-- настройка Go
-- `go test ./...`
-- `go build ./...`
-- `docker build`
-
-## Выбранная платформа
-
-Основной вариант в проекте — `GitHub Actions`.
-
-Файл:
-
-```text
-.github/workflows/ci.yml
-```
-
-Дополнительно для отчёта добавлен эквивалентный вариант:
-
-```text
-.gitlab-ci.yml
 ```
 
 ## Локальная проверка перед CI
@@ -130,54 +106,3 @@ $CI_COMMIT_SHORT_SHA
 ```
 
 Это позволяет точно понимать, какая версия приложения собрана.
-
-## Secrets и переменные
-
-Если pipeline должен публиковать образ в registry или делать деплой, секреты нужно хранить в CI secret storage:
-
-- `REGISTRY_USERNAME`
-- `REGISTRY_PASSWORD`
-- `SSH_PRIVATE_KEY`
-
-Их нельзя:
-- коммитить в репозиторий
-- писать прямо в YAML
-- хранить в открытом `.env`, который попадает в Git
-
-## Опциональная публикация образа
-
-Пример логики для GitHub Actions:
-
-```yaml
-- name: Login to registry
-  run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ghcr.io
-
-- name: Build image
-  run: docker build -t ghcr.io/my-org/techip-tasks:${{ github.sha }} .
-  working-directory: ./services/tasks
-
-- name: Push image
-  run: docker push ghcr.io/my-org/techip-tasks:${{ github.sha }}
-```
-
-## Опциональный деплой
-
-Минимальная идея деплоя:
-- pipeline подключается к серверу по SSH
-- выполняет `docker pull`
-- затем запускает `docker compose up -d`
-
-Пример логики:
-
-```text
-docker pull ghcr.io/my-org/techip-tasks:<tag>
-docker compose up -d
-```
-
-## Что важно понять
-
-- pipeline должен работать на проекте, который уже собирается локально
-- в multi-service репозитории важно правильно указать `working-directory`
-- Docker build в CI подтверждает, что образ собирается не только на машине разработчика
-- секреты должны храниться только в CI variables / secrets
-- автоматический деплой удобен, но требует аккуратной работы с доступами и откатами
